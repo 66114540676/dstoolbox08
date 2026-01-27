@@ -1,0 +1,785 @@
+
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8. โมดูลสำหหรับวิทยาการข้อมูล</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+
+    body {
+      font-family: 'Kanit', sans-serif;
+    }
+
+    .slide {
+      min-height: 100vh;
+      display: none;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+    }
+
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .tech-card {
+      transition: all 0.3s ease;
+    }
+
+    .tech-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    .slide-counter {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 20px;
+      font-size: 14px;
+      z-index: 1000;
+    }
+    .home {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      color: white;
+      font-size: 14px;
+      z-index: 1000;
+    }
+    </style>
+  </head>
+  <body class="bg-gray-50" x-data="slideshow()">
+    <!-- แผนการสอน -->
+    <div class="home flex items-center gap-4">
+      <a href="https://wichit2s.github.io/courses/dstoolbox/" class="text-white bg-gray-900 backdrop-blur-sm hover:bg-gray-700 transition rounded-full p-2 px-4 text-sm">
+        <span class="hover:text-blue-700">
+          <svg class="inline w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-school-icon lucide-school"><path d="M14 22v-4a2 2 0 1 0-4 0v4"/><path d="m18 10 3.447 1.724a1 1 0 0 1 .553.894V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7.382a1 1 0 0 1 .553-.894L6 10"/><path d="M18 5v17"/><path d="m4 6 7.106-3.553a2 2 0 0 1 1.788 0L20 6"/><path d="M6 5v17"/><circle cx="12" cy="9" r="2"/></svg>
+        </span>
+        <span class="py-3 mt-2"> แผนการเรียนรู้ </span>
+      </a>
+    </div>
+
+    <!-- Slide Counter -->
+    <div class="slide-counter bg-gray-900">
+      <span x-text="currentSlide+1"></span> / <span x-text="totalSlides"></span>
+    </div>
+
+    <!-- Navigation -->
+    <div class="fixed top-2 left-0 right-0 flex justify-between items-center px-8 z-10">
+      <!-- ปุ่มก่อนหน้า -->
+      <button id="prevSlide" @click="previousSlide()" class="text-white bg-white/10 backdrop-blur-sm hover:bg-white/20 transition rounded-full p-4">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+
+      <!-- ตรงกลาง: ตัวนับสไลด์ + ปุ่ม Home -->
+      <div class="flex items-center gap-4">
+        <a href="https://wichit2s.github.io/_static/courses/dstoolbox/slides/wk08.html" class="text-white bg-white/10 backdrop-blur-sm hover:bg-white/20 transition rounded-full p-2 px-4 text-sm">
+          <span>
+            <svg class="inline w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-icon lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          </span>
+        </a>
+      </div>
+
+      <!-- ปุ่มถัดไป -->
+      <button id="nextSlide" @click="nextSlide()" class="text-white bg-white/10 backdrop-blur-sm hover:bg-white/20 transition rounded-full p-4">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+
+
+
+    <div x-ref="slidesContainer">
+
+      <div :class="{ 'active': currentSlide === 0 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <h1 class="text-6xl font-bold mb-6 leading-tight mt-8">
+            โมดูลสำคัญใน<br>
+            <span class="text-yellow-300">วิทยาการข้อมูล</span>
+          </h1>
+
+          <div class="text-xl text-white/90 mb-8 font-light">
+            Scikit-learn • PyCaret • Statsmodels • TensorFlow • PyTorch
+          </div>
+
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4">ผลลัพธ์การเรียนรู้</h2>
+            <div class="grid md:grid-cols-2 gap-4 text-left">
+              <div class="flex items-start gap-3"><div class="badge">1</div><span>อธิบายบทบาทของแต่ละโมดูลในงานวิทยาการข้อมูลได้</span></div>
+              <div class="flex items-start gap-3"><div class="badge">2</div><span>ติดตั้งและใช้งาน Scikit-learn สำหรับโมเดลพื้นฐานได้</span></div>
+              <div class="flex items-start gap-3"><div class="badge">3</div><span>เปรียบเทียบโมดูลต่าง ๆ ที่ใช้ในการสร้างโมเดลได้</span></div>
+              <div class="flex items-start gap-3"><div class="badge">4</div><span>ใช้ Agent AI เพื่อช่วยประเมินและเลือกโมเดลที่เหมาะสมได้</span></div>
+            </div>
+          </div>
+
+          <div class="text-lg text-white/80">
+            <span class="week-label">สัปดาห์ที่ 8</span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Slide 1: Agenda -->
+      <div :class="{ 'active': currentSlide === 1 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+            <h2 class="text-4xl font-semibold mb-10 text-blue-300">Agenda: Data Science Modules & Workflows</h2>
+            <ul class="list-disc pl-6 space-y-4 text-2xl text-left">
+              <li><strong>Data Science Toolbox:</strong> Scikit-Learn, Statsmodels, TF, & PyTorch</li>
+              <li><strong>Low-Code Development:</strong> พัฒนา Workflow ด้วย PyCaret </li>
+              <li><strong>Agent AI & ADK:</strong> การสร้าง Agent ประเมินโมเดลอัตโนมัติ </li>
+              <li><strong>MCP Integration:</strong> การจัดการ Context ของโมเดล </li>
+              <li><strong>Personalized Learning:</strong> การใช้ AI ช่วยพัฒนาโครงงาน </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 2: The Data Science Toolbox -->
+      <div :class="{ 'active': currentSlide === 2 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <h2 class="text-4xl font-semibold mb-8 text-blue-300">ชุดเครื่องมือสำหรับวิทยาการข้อมูล</h2>
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-left">
+            <p class="text-2xl mb-6">หลักสูตร <strong>1145100</strong> เน้นการใช้ภาษา <strong>Python</strong> และโมดูลที่เกี่ยวข้องเพื่อพัฒนาโครงงาน </p>
+            <div class="grid grid-cols-2 gap-4 text-xl">
+              <div class="bg-blue-500/20 p-4 rounded-lg">
+                <h4 class="font-bold">Traditional ML</h4>
+                <p>Scikit-Learn & Statsmodels</p>
+              </div>
+              <div class="bg-purple-500/20 p-4 rounded-lg">
+                <h4 class="font-bold">Deep Learning</h4>
+                <p>TensorFlow & PyTorch</p>
+              </div>
+              <div class="bg-green-500/20 p-4 rounded-lg">
+                <h4 class="font-bold">Automation</h4>
+                <p>PyCaret & Agent AI </p>
+              </div>
+              <div class="bg-orange-500/20 p-4 rounded-lg">
+                <h4 class="font-bold">Frameworks</h4>
+                <p>MCP & ADK </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 3: Scikit-Learn & Statsmodels -->
+      <div :class="{ 'active': currentSlide === 3 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-6xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">Statistical Analysis & Classic ML</h2>
+          <div class="grid grid-cols-2 gap-6">
+            <!-- Left Column: Key Differences -->
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-left">
+              <h3 class="text-2xl font-bold mb-4 text-yellow-300">Key Differences</h3>
+              <ul class="space-y-4 text-lg">
+                <li><strong class="text-blue-400">Statsmodels:</strong> ออกแบบมาเพื่อการวิเคราะห์ความสัมพันธ์เชิงสถิติ (Inference) ให้ค่า p-value และ Summary Report ที่ละเอียด </li>
+                <li><strong class="text-green-400">Scikit-Learn:</strong> ออกแบบมาเพื่อเน้นประสิทธิภาพการทำนาย (Prediction) และการสร้าง Workflow ที่เป็นระบบ </li>
+              </ul>
+            </div>
+
+            <!-- Right Column: Comparable Code -->
+            <div class="bg-black/40 rounded-xl p-4 text-left font-mono text-xs overflow-y-auto max-h-[400px]">
+              <p class="text-blue-400"># --- Statsmodels: Statistical Inference ---</p>
+              <p>import statsmodels.api as sm</p>
+              <p># ต้องเพิ่ม constant (intercept) ด้วยตัวเอง</p>
+              <p>X_stat = sm.add_constant(X)</p>
+              <p>model_stat = sm.Logit(y, X_stat).fit()</p>
+              <p># แสดงผลการทดสอบทางสถิติอย่างละเอียด</p>
+              <p>print(model_stat.summary())</p>
+
+              <br>
+              <p class="text-green-400"># --- Scikit-Learn: Prediction Pipeline ---</p>
+              <p>from sklearn.pipeline import make_pipeline</p>
+              <p>from sklearn.preprocessing import StandardScaler</p>
+              <p>from sklearn.linear_model import LogisticRegression</p>
+              <p>model = make_pipeline(StandardScaler(), LogisticRegression())</p>
+              <p>model.fit(X, y)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 4: Deep Learning (TF & PyTorch) -->
+      <div :class="{ 'active': currentSlide === 4 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-8 text-blue-300">Advanced Modules: TensorFlow & PyTorch</h2>
+          <div class="space-y-6 text-left">
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border-r-4 border-orange-500">
+              <h3 class="text-xl font-bold text-orange-400">TensorFlow / Keras</h3>
+              <p>เน้นการใช้งานในระดับ Production และมีความสามารถในระบบนิเวศขนาดใหญ่ (TFX, TF Lite)</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border-r-4 border-red-500">
+              <h3 class="text-xl font-bold text-red-400">PyTorch</h3>
+              <p>เป็นที่นิยมในงานวิจัยด้วยระบบ Dynamic Computation Graph ที่ยืดหยุ่นและเขียนโค้ดได้แบบ Pythonic</p>
+            </div>
+          </div>
+          <p class="mt-8 text-sm italic">การเลือกใช้ขึ้นอยู่กับความต้องการของโครงงาน (Research vs Production)</p>
+        </div>
+      </div>
+
+      <!-- Slide 5: Low-Code Workflow with PyCaret -->
+      <div :class="{ 'active': currentSlide === 5 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-5xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">PyCaret: Automating the ML Workflow</h2>
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+            <p class="text-xl mb-4 text-left"><strong>PyCaret</strong> ช่วยให้การพัฒนา Workflow รวดเร็วขึ้นโดยการทำ Low-code automation </p>
+            <div class="grid grid-cols-3 gap-4 mb-6">
+              <div class="bg-blue-600/40 p-4 rounded text-center">Compare Models</div>
+              <div class="bg-blue-600/40 p-4 rounded text-center">Auto Tuning</div>
+              <div class="bg-blue-600/40 p-4 rounded text-center">Model Analysis</div>
+            </div>
+            <div class="bg-black/40 rounded-xl p-4 text-left font-mono text-sm">
+              <p class="text-yellow-400"># PyCaret 3 บรรทัดเพื่อหาโมเดลที่ดีที่สุด</p>
+              <p>from pycaret.classification import *</p>
+              <p>s = setup(data, target = 'label', session_id = 123)</p>
+              <p>best = <span class="text-green-400">compare_models()</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 6 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+            <h2 class="text-4xl font-semibold mb-8 text-blue-300">ML Workflow Strategy</h2>
+            <p class="text-xl mb-6 text-left">ในสัปดาห์นี้เราจะเปลี่ยนจากการเขียนสคริปต์แยกส่วน เป็นการสร้าง **Workflow** ที่สมบูรณ์ </p>
+            <div class="grid grid-cols-1 gap-4 text-left">
+              <div class="flex items-center space-x-4 bg-white/5 p-3 rounded-lg">
+                <span class="text-2xl">1️⃣</span>
+                <p><strong>Preprocessing:</strong> ใช้ Scikit-Learn จัดการ Data Pipeline </p>
+              </div>
+              <div class="flex items-center space-x-4 bg-white/5 p-3 rounded-lg">
+                <span class="text-2xl">2️⃣</span>
+                <p><strong>Prototyping:</strong> ใช้ PyCaret ทดสอบหลายโมเดลพร้อมกันอย่างรวดเร็ว </p>
+              </div>
+              <div class="flex items-center space-x-4 bg-white/5 p-3 rounded-lg">
+                <span class="text-2xl">3️⃣</span>
+                <p><strong>Evaluation:</strong> ใช้ Agent AI ประเมินผลลัพธ์อัตโนมัติ </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 7 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-5xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">Scikit-Learn: Standardizing the Pipeline</h2>
+          <div class="grid grid-cols-2 gap-6">
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-left">
+              <h3 class="text-xl font-bold mb-4">ทำไมต้องใช้ Pipeline?</h3>
+              <ul class="text-lg space-y-3">
+                <li>ป้องกัน <strong>Data Leakage</strong> ระหว่างการ Train/Test </li>
+                <li>สร้าง Workflow ที่เป็นมาตรฐานสำหรับระบบอัตโนมัติ</li>
+                <li>เชื่อมต่อกับ Docker เพื่อการทำซ้ำงาน (Reproducibility) </li>
+              </ul>
+            </div>
+            <div class="bg-black/40 rounded-xl p-4 text-left font-mono text-xs">
+              <p class="text-green-400"># Example: Standard Pipeline</p>
+              <p>from sklearn.pipeline import Pipeline</p>
+              <p>from sklearn.impute import SimpleImputer</p>
+              <br>
+              <p>workflow = Pipeline([</p>
+              <p>&nbsp;&nbsp;('imputer', SimpleImputer(strategy='mean')),</p>
+              <p>&nbsp;&nbsp;('scaler', StandardScaler()),</p>
+              <p>&nbsp;&nbsp;('model', RandomForestClassifier())</p>
+              <p>])</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 8 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">PyCaret: Fast-Track Data Science</h2>
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-left">
+            <p class="text-xl mb-4">PyCaret ทำหน้าที่เป็นเครื่องมือ <strong>Low-code</strong> เพื่อเร่งกระบวนการทดลอง </p>
+            <ul class="list-disc pl-6 space-y-4 mb-6">
+              <li><strong>Compare Models:</strong> เปรียบเทียบประสิทธิภาพของอัลกอริทึมกว่า 20 แบบในคำสั่งเดียว </li>
+              <li><strong>Auto-tuning:</strong> ปรับแต่ง Hyperparameters โดยอัตโนมัติ</li>
+            </ul>
+            <div class="bg-black/40 rounded-xl p-4 font-mono text-sm">
+              <p class="text-yellow-400"># ค้นหาโมเดลที่ดีที่สุดเพื่อส่งต่อให้ Agent AI</p>
+              <p>best_model = compare_models()</p>
+              <p>evaluate_model(best_model)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 9 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <h2 class="text-4xl font-semibold mb-6 text-blue-300">Agent AI for Automated Evaluation</h2>
+          <div class="bg-blue-900/40 border border-blue-400 rounded-2xl p-6 text-left">
+            <p class="text-xl mb-4">การใช้ <strong>Agent Development Kit (ADK)</strong> สร้าง Agent เพื่อประเมินโมเดล </p>
+            <div class="flex items-center space-x-6">
+              <div class="flex-1 bg-white/10 p-4 rounded-lg">
+                <h4 class="font-bold text-yellow-300">Input</h4>
+                <p class="text-sm">Confusion Matrix, F1-Score, และ Metrics อื่นๆ</p>
+              </div>
+              <div class="text-2xl">➔</div>
+              <div class="flex-1 bg-green-500/20 p-4 rounded-lg">
+                <h4 class="font-bold text-green-300">Agent Task</h4>
+                <p class="text-sm">วิเคราะห์หา Bias หรือ Overfitting และสรุปผล </p>
+              </div>
+            </div>
+            <p class="mt-6 text-sm italic">*เป็นการนำเทคโนโลยี AI มาเพิ่มประสิทธิภาพในกระบวนการทำงานด้านข้อมูล </p>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 10 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-8 text-blue-300">Connecting Everything via MCP</h2>
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-left">
+            <h3 class="text-2xl mb-4 text-purple-300">Model Context Protocol (MCP)</h3>
+            <p class="mb-6">ใช้ MCP เพื่อสร้าง <strong>Context Layers</strong> สำหรับโมเดล AI </p>
+            <ul class="space-y-4">
+              <li class="flex items-start">
+                <span class="bg-purple-500 px-2 py-1 rounded mr-3 text-xs">Metadata</span>
+                <span>เก็บประวัติการ Train และที่มาของ Dataset ใน Docker image </span>
+              </li>
+              <li class="flex items-start">
+                <span class="bg-purple-500 px-2 py-1 rounded mr-3 text-xs">Context</span>
+                <span>ช่วยให้ Agent AI เข้าใจข้อจำกัดของข้อมูลก่อนทำการประเมิน </span>
+              </li>
+            </ul>
+            <p class="mt-8 text-center text-sm font-bold">"Workflow = Scikit-Learn + PyCaret + MCP + Agent AI" </p>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 11 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">Metrics for Automated Evaluation</h2>
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-left">
+            <p class="mb-4">ก่อนที่ Agent จะประเมินผลได้ เราต้องกำหนดตัวชี้วัดที่เป็นมาตรฐานจากโมดูลวิทยาการข้อมูล </p>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="p-3 bg-white/5 rounded border border-blue-500/30">
+                <h4 class="font-bold text-blue-200">Classification</h4>
+                <ul class="text-sm list-disc pl-5">
+                  <li>Accuracy, Precision, Recall</li>
+                  <li>F1-Score (Balance)</li>
+                  <li>Confusion Matrix</li>
+                </ul>
+              </div>
+              <div class="p-3 bg-white/5 rounded border border-green-500/30">
+                <h4 class="font-bold text-green-200">Regression</h4>
+                <ul class="text-sm list-disc pl-5">
+                  <li>MAE (Mean Absolute Error)</li>
+                  <li>RMSE (Root Mean Squared Error)</li>
+                  <li>R-Squared</li>
+                </ul>
+              </div>
+            </div>
+            <p class="mt-4 text-sm italic">Agent จะใช้ข้อมูลเหล่านี้ในการตัดสินใจว่าโมดูลใดมีประสิทธิภาพสูงสุด </p>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 12 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-5xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">Designing Agents with ADK</h2>
+          <div class="grid grid-cols-2 gap-6 items-center">
+            <div class="text-left space-y-4">
+              <p>ใช้ **ADK** ในการสร้าง Command-based Data Agent </p>
+              <ul class="list-disc pl-6 space-y-2 text-sm">
+                <li><strong>Role Definition:</strong> กำหนดบทบาทเป็น "Model Evaluator"</li>
+                <li><strong>Task Logic:</strong> เขียน Logic ให้ Agent ตรวจสอบค่า Overfitting อัตโนมัติ</li>
+                <li><strong>Querying:</strong> Agent สามารถดึงข้อมูลจากโมเดลมาวิเคราะห์ได้โดยตรง </li>
+              </ul>
+            </div>
+            <div class="bg-black/40 rounded-xl p-4 text-left font-mono text-xs">
+              <p class="text-gray-400"># ADK Conceptual Structure </p>
+              <p>from adk import Agent</p>
+              <br>
+              <p>evaluator = Agent(role="Evaluator")</p>
+              <p>@evaluator.command("analyze")</p>
+              <p>def analyze_metrics(data):</p>
+              <p>&nbsp;&nbsp;if data.accuracy < 0.8:</p>
+              <p>&nbsp;&nbsp;&nbsp;&nbsp;return "Model needs tuning"</p>
+              <p>&nbsp;&nbsp;return "Model passed"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 13 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+            <h2 class="text-3xl font-semibold mb-6 text-blue-300">Contextual Awareness via MCP</h2>
+            <p class="text-lg mb-6 text-left">Agent ต้องการ **Context Layers** เพื่อการประเมินที่แม่นยำ </p>
+            <div class="space-y-4 text-left">
+              <div class="bg-purple-900/30 p-4 rounded-lg border-l-4 border-purple-400">
+                <h4 class="font-bold">Metadata Integration</h4>
+                <p class="text-sm">ใช้ MCP จัดเก็บข้อมูลโครงการ เช่น วัตถุประสงค์ของโมเดล และลักษณะของชุดข้อมูล </p>
+              </div>
+              <div class="bg-purple-900/30 p-4 rounded-lg border-l-4 border-purple-400">
+                <h4 class="font-bold">Prompting Context</h4>
+                <p class="text-sm">สร้าง Context Prompt เพื่อให้ Agent รู้ว่า "Accuracy 70%" อาจจะดีเพียงพอแล้วสำหรับข้อมูลที่มีความซับซ้อนสูง </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 14 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-5xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-8 text-blue-300">The Integrated Workflow</h2>
+          <div class="flex justify-between items-center text-center">
+            <div class="w-1/4 bg-blue-500/20 p-4 rounded-xl border border-blue-400">
+              <h4 class="font-bold">Develop</h4>
+              <p class="text-xs">Scikit-Learn / PyCaret</p>
+            </div>
+            <div class="text-2xl">➔</div>
+            <div class="w-1/4 bg-purple-500/20 p-4 rounded-xl border border-purple-400">
+              <h4 class="font-bold">Context</h4>
+              <p class="text-xs">MCP Metadata</p>
+            </div>
+            <div class="text-2xl">➔</div>
+            <div class="w-1/4 bg-green-500/20 p-4 rounded-xl border border-green-400">
+              <h4 class="font-bold">Evaluate</h4>
+              <p class="text-xs">Agent AI (ADK)</p>
+            </div>
+          </div>
+          <div class="mt-10 p-4 bg-white/5 rounded-lg">
+            <p class="text-sm italic">"เทคโนโลยี AI ช่วยเพิ่มประสิทธิภาพในกระบวนการทำงานด้านข้อมูลอย่างเป็นระบบ" </p>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 15 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
+            <h2 class="text-4xl font-semibold mb-6 text-yellow-300">Week 8 Assessment: การบ้าน</h2>
+            <p class="text-xl mb-8">ภารกิจ: พัฒนา Workflow และระบบประเมินอัตโนมัติ </p>
+            <ul class="list-disc pl-8 space-y-4 text-left text-lg">
+              <li>สร้าง ML Pipeline ด้วย <strong>Scikit-Learn</strong> หรือ <strong>PyCaret</strong></li>
+              <li>ใช้ <strong>MCP</strong> เพื่อฝัง Metadata เกี่ยวกับประสิทธิภาพเบื้องต้น</li>
+              <li>ออกแบบ <strong>Agent AI</strong> อย่างง่ายเพื่อสรุปผลการประเมินโมเดล</li>
+            </ul>
+            <p class="mt-10 text-sm text-gray-300">สัปดาห์หน้า: Docker และการทำซ้ำงาน (Reproducibility) </p>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 16 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+            <h2 class="text-3xl font-semibold mb-6 text-blue-300">Personalized AI Learning in the Lab</h2>
+            <p class="text-xl mb-4 text-left">ในคาบปฏิบัติการ 2 ชั่วโมง เราจะใช้ **AI as a Co-Developer** </p>
+            <ul class="list-disc pl-8 space-y-4 text-left text-lg">
+              <li><strong>Debugging:</strong> ใช้ ChatGPT หรือ Copilot ในการแก้ปัญหา Error ของโมดูล Scikit-Learn </li>
+              <li><strong>Optimization:</strong> ให้ AI ช่วยปรับปรุง Hyperparameters หลังจากใช้ PyCaret </li>
+              <li><strong>Code Explanation:</strong> ใช้ AI อธิบายการทำงานของ Pipeline ที่ซับซ้อนเพื่อความเข้าใจรายบุคคล </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 17 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+            <h2 class="text-4xl font-semibold mb-10 text-blue-300">Lab Part 1: Standardizing the ML Workflow</h2>
+            <p class="text-xl mb-8 text-left">เป้าหมาย: สร้างกระบวนการทำงานที่ทำซ้ำได้ (Reproducible Workflow) โดยใช้ Scikit-Learn</p>
+            <ul class="list-decimal pl-10 space-y-4 text-xl text-left">
+              <li><strong>Data Setup:</strong> โหลดข้อมูลและแบ่งชุดข้อมูลสำหรับทดสอบ</li>
+              <li><strong>Preprocessing:</strong> จัดการค่าว่างและปรับสเกลข้อมูล</li>
+              <li><strong>Pipeline Construction:</strong> ประกอบขั้นตอนทั้งหมดเข้าด้วยกัน</li>
+              <li><strong>Evaluation:</strong> วัดผลประสิทธิภาพด้วย RMSE</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 18 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-5xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">Step 1: Data Setup</h2>
+          <div class="grid grid-cols-1 gap-4">
+            <div class="bg-black/40 rounded-xl p-4 text-left font-mono text-sm">
+              <p class="text-green-400"># 1. โหลดข้อมูลโดยใช้ Pandas</p>
+              <p>import pandas as pd</p>
+              <p>from sklearn.model_selection import train_test_split</p>
+              <br>
+              <p>housing = pd.read_csv("housing.csv")</p>
+              <br>
+              <p class="text-green-400"># 2. แบ่งชุดข้อมูล Train (80%) และ Test (20%)</p>
+              <p>train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)</p>
+              <br>
+              <p class="text-green-400"># 3. แยก Features และ Labels</p>
+              <p>X_train = train_set.drop("median_house_value", axis=1)</p>
+              <p>y_train = train_set["median_house_value"].copy()</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 19 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-5xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">Step 2: Automated Preprocessing</h2>
+          <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-left mb-4 text-lg">
+            <p>เราจะสร้าง <strong>Numerical Pipeline</strong> เพื่อจัดการข้อมูลตัวเลข:</p>
+          </div>
+          <div class="bg-black/40 rounded-xl p-4 text-left font-mono text-sm">
+            <p>from sklearn.pipeline import Pipeline</p>
+            <p>from sklearn.impute import SimpleImputer</p>
+            <p>from sklearn.preprocessing import StandardScaler</p>
+            <br>
+            <p>num_pipeline = Pipeline([</p>
+            <p>&nbsp;&nbsp;('imputer', SimpleImputer(strategy="median")), <span class="text-gray-400"># เติมค่าว่างด้วยค่ากลาง [5]</span></p>
+            <p>&nbsp;&nbsp;('std_scaler', StandardScaler()), <span class="text-gray-400"># ปรับสเกลข้อมูล [6]</span></p>
+            <p>])</p>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 20 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-5xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">Step 3: Integrated Pipeline Construction</h2>
+          <div class="bg-black/40 rounded-xl p-4 text-left font-mono text-xs overflow-y-auto max-h-[450px]">
+            <p>from sklearn.compose import ColumnTransformer</p>
+            <p>from sklearn.preprocessing import OneHotEncoder</p>
+            <p>from sklearn.ensemble import RandomForestRegressor</p>
+            <br>
+            <p>num_attribs = list(X_train.select_dtypes(include=['float64', 'int64']))</p>
+            <p>cat_attribs = ["ocean_proximity"]</p>
+            <br>
+            <p class="text-blue-300"># รวม Preprocessing สำหรับทุกประเภทข้อมูล [7]</p>
+            <p>full_pipeline = ColumnTransformer([</p>
+            <p>&nbsp;&nbsp;("num", num_pipeline, num_attribs),</p>
+            <p>&nbsp;&nbsp;("cat", OneHotEncoder(), cat_attribs),</p>
+            <p>])</p>
+            <br>
+            <p class="text-blue-300"># เชื่อมต่อ Preprocessing เข้ากับ Model (Estimator)</p>
+            <p>final_pipeline = Pipeline([</p>
+            <p>&nbsp;&nbsp;("prep", full_pipeline),</p>
+            <p>&nbsp;&nbsp;("algo", RandomForestRegressor())</p>
+            <p>])</p>
+            <br>
+            <p>final_pipeline.fit(X_train, y_train) <span class="text-green-400"># สั่งรันทั้ง Pipeline ในคำสั่งเดียว! </span></p>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 21 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">Step 4: Scoring & Debugging</h2>
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-left">
+            <div class="bg-black/40 rounded-xl p-4 font-mono text-sm mb-6">
+              <p>from sklearn.metrics import mean_squared_error</p>
+              <p>import numpy as np</p>
+              <br>
+              <p>predictions = final_pipeline.predict(X_train)</p>
+              <p>mse = mean_squared_error(y_train, predictions)</p>
+              <p>rmse = np.sqrt(mse)</p>
+              <p>print(f"RMSE: {rmse}") <span class="text-gray-400"># วัดระยะห่างระหว่างผลทำนายกับความจริง </span></p>
+            </div>
+            <h4 class="font-bold text-yellow-300 mb-2">Personalized AI Learning Tip:</h4>
+            <p class="text-lg">หากรันโค้ดแล้วเกิด <strong>ValueError</strong> หรือ <strong>KeyError</strong></p>
+            <ul class="list-disc pl-6 text-md space-y-1">
+              <li>Copy Error Message ไปถาม ChatGPT หรือ Copilot [11]</li>
+              <li>ถาม AI: "How can I check if my ColumnTransformer column names match my DataFrame?"</li>
+              <li>ใช้ AI ช่วยอธิบายว่าทำไม <code>OneHotEncoder</code> ถึงเปลี่ยนข้อมูลเป็น Sparse Matrix </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 22 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+            <h2 class="text-4xl font-semibold mb-10 text-blue-300">Lab Part 2: Rapid Prototyping & AI Critique</h2>
+            <p class="text-xl mb-8 text-left">เป้าหมาย: ใช้ PyCaret เพื่อเปรียบเทียบโมเดลอย่างรวดเร็ว และใช้ Agent AI วิเคราะห์ผลลัพธ์</p>
+            <ul class="list-decimal pl-10 space-y-4 text-xl text-left">
+              <li><strong>Environment Setup:</strong> เตรียมข้อมูลและกำหนดเป้าหมาย (Target)</li>
+              <li><strong>Model Comparison:</strong> สั่งรันอัลกอริทึมหลายตัวพร้อมกันเพื่อหาตัวที่ "ดีที่สุด"</li>
+              <li><strong>Model Analysis:</strong> ดูผลลัพธ์ผ่าน Visualization</li>
+              <li><strong>Agent Evaluation:</strong> ใช้ AI ช่วยวิเคราะห์ว่าโมเดลไหนเหมาะสมกับงานจริง</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 23 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-5xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">Step 1: Setup the Experiment</h2>
+          <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-left mb-4 text-lg border-l-4 border-yellow-400">
+            <p>คำสั่ง <code>setup()</code> จะจัดการ Preprocessing (Imputation, Scaling, Encoding) ให้อัตโนมัติ </p>
+          </div>
+          <div class="bg-black/40 rounded-xl p-4 text-left font-mono text-sm">
+            <p class="text-green-400"># 1. ติดตั้งและโหลด Library</p>
+            <p>from pycaret.classification import *</p>
+            <br>
+            <p class="text-green-400"># 2. เริ่มต้นระบบ (สมมติใช้ชุดข้อมูล Diabetes [4])</p>
+            <p>s = setup(data=df, target='Outcome', session_id=123, train_size=0.7)</p>
+            <br>
+            <p class="text-gray-400"># PyCaret จะแสดงตารางสรุปการจัดการข้อมูล เช่น ข้อมูลว่างหรือประเภทตัวแปร</p>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 24 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-5xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">Step 2: Model Ranking</h2>
+          <div class="grid grid-cols-2 gap-6">
+            <div class="bg-black/40 rounded-xl p-4 text-left font-mono text-xs overflow-y-auto">
+              <p class="text-yellow-400"># รันและเปรียบเทียบโมเดลทั้งหมด</p>
+              <p>best_model = compare_models()</p>
+              <br>
+              <p class="text-blue-300"># ตารางผลลัพธ์จะปรากฏขึ้นพร้อมค่า</p>
+              <p>- Accuracy</p>
+              <p>- AUC (Area Under Curve) [7]</p>
+              <p>- Recall / Precision [8]</p>
+              <p>- F1-Score [8]</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-left">
+              <h4 class="font-bold text-blue-200 mb-2">จุดสังเกต:</h4>
+              <p class="text-sm">มองหาโมเดลที่มีค่า <strong>F1-Score</strong> และ <strong>AUC</strong> สูงพร้อมๆ กัน เพื่อความสมดุลในการทำนาย </p>
+              <p class="mt-4 text-sm italic">*Tip: สังเกตว่า Gradient Boosting มักทำคะแนนได้ดีในข้อมูล Tabular </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 25 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-5xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">Step 3: Analyze & Tune</h2>
+          <div class="grid grid-cols-1 gap-4">
+            <div class="bg-black/40 rounded-xl p-4 text-left font-mono text-sm">
+              <p class="text-green-400"># ดู Confusion Matrix</p>
+              <p>plot_model(best_model, plot='confusion_matrix')</p>
+              <br>
+              <p class="text-green-400"># ดู Feature Importance</p>
+              <p>plot_model(best_model, plot='feature')</p>
+              <br>
+              <p class="text-yellow-400"># ปรับแต่งค่า Hyperparameters ให้ดีขึ้น </p>
+              <p>tuned_model = tune_model(best_model)</p>
+            </div>
+            <p class="text-gray-300">ใช้รูปภาพเหล่านี้เป็น <strong>Context</strong> เพื่อส่งให้ Agent AI ในขั้นตอนถัดไป</p>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 26 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">Step 4: AI Model Critique</h2>
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-left">
+            <h4 class="font-bold text-yellow-300 mb-4">ภารกิจของนักศึกษา:</h4>
+            <p class="mb-4">ส่งค่า Metrics จาก PyCaret เข้าไปยัง AI Agent (ChatGPT/Copilot) พร้อมใช้ Prompt ดังนี้</p>
+            <div class="bg-blue-900/40 p-4 rounded-lg italic text-sm mb-6 border border-blue-400">
+              "ในฐานะ Data Science Analyst, จงวิเคราะห์ผลลัพธ์: Accuracy 0.85, F1 0.72 และ Confusion Matrix ที่มี False Negative สูง โมเดลนี้เสี่ยงต่อการเกิด Overfitting หรือไม่? และควรนำไป Deploy ในระบบจริงหรือไม่?"
+            </div>
+            <p class="text-green-300 font-bold">ผลลัพธ์: นักศึกษาต้องบันทึกคำวิจารณ์ของ Agent AI ลงในรายงาน Lab </p>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 27 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <h2 class="text-3xl font-semibold mb-6 text-blue-300">Roadmap: From Pipeline to Agent AI</h2>
+          <div class="space-y-4 text-left">
+            <p>สิ่งที่เรียนในสัปดาห์นี้จะเป็นฐานสำคัญสำหรับ</p>
+            <div class="p-4 bg-white/5 rounded-lg border border-white/20">
+              <h4 class="font-bold text-purple-300">Week 10-11: ADK Mastery </h4>
+              <p class="text-sm">การสร้าง Command-based Data Agent เพื่อ Query ข้อมูลและจัดการโครงงานอัตโนมัติโดยใช้ ADK Documentation </p>
+            </div>
+            <div class="p-4 bg-white/5 rounded-lg border border-white/20">
+              <h4 class="font-bold text-purple-300">Final Project Integration </h4>
+              <p class="text-sm">การบูรณาการ <strong>MCP + Agent AI</strong> เพื่อนำเสนอผลงานปลายภาค </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div :class="{ 'active': currentSlide === 28 }" class="slide gradient-bg flex-col justify-center items-center text-white">
+        <div class="text-center max-w-4xl mx-auto px-8">
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
+            <h2 class="text-4xl font-semibold mb-6 text-blue-300">Summary & Next Steps</h2>
+            <ul class="list-disc pl-8 space-y-4 text-left text-xl">
+              <li><strong>Workflow:</strong> เข้าใจความสำคัญของ Pipeline ใน Scikit-Learn และ PyCaret </li>
+              <li><strong>Automation:</strong> เริ่มใช้ AI Agent ในการประเมินประสิทธิภาพเบื้องต้น </li>
+              <li><strong>Homework:</strong> ส่งรายงานการสร้าง Pipeline และผลวิเคราะห์จาก Agent AI </li>
+            </ul>
+            <div class="mt-10 py-4 px-6 bg-yellow-500/20 rounded-full inline-block border border-yellow-500/50">
+              <p class="text-yellow-300 font-bold">Next Week: Docker & Reproducibility (การฝัง MCP Metadata ใน Build Image) </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    function slideshow() {
+      return {
+        currentSlide: 0,
+        totalSlides: 0,
+        touchStartX: 0,
+        touchEndX: 0,
+
+        init() {
+          // นับจำนวนสไลด์ทั้งหมด
+          this.totalSlides = this.$refs.slidesContainer.querySelectorAll('.slide').length;
+          
+          // เพิ่ม event listeners
+          this.setupKeyboardNavigation();
+          this.setupTouchNavigation();
+        },
+
+        nextSlide() {
+          this.currentSlide = (this.currentSlide + 1) % this.totalSlides;
+        },
+
+        previousSlide() {
+          this.currentSlide = (this.currentSlide - 1 + this.totalSlides) % this.totalSlides;
+        },
+
+        setupKeyboardNavigation() {
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+              e.preventDefault();
+              this.nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+              e.preventDefault();
+              this.previousSlide();
+            }
+          });
+        },
+
+        setupTouchNavigation() {
+          document.addEventListener('touchstart', (e) => {
+            this.touchStartX = e.changedTouches[0].screenX;
+          });
+
+          document.addEventListener('touchend', (e) => {
+            this.touchEndX = e.changedTouches[0].screenX;
+            const swipeDistance = 50;
+            
+            if (this.touchStartX - this.touchEndX > swipeDistance) {
+              this.nextSlide();
+            } else if (this.touchEndX - this.touchStartX > swipeDistance) {
+              this.previousSlide();
+            }
+          });
+        }
+      }
+    }
+    </script>
+
+  </body>
+</html>
