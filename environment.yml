@@ -1,0 +1,11 @@
+name: pycaret-mcp-test-env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pycaret
+  - pip
+  - pip:
+    - pytest
+    - httpx
+    - uvicorn[standard]

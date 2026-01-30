@@ -1,7 +1,7 @@
 [project]
-name = "dstoolbox-wk08"
+name = "pycaret-mcp-server"
 version = "0.1.0"
-description = "Add your description here"
+description = "PyCaret MCP-style server"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -10,5 +10,8 @@ dependencies = [
     "matplotlib",
     "scikit-learn",
     "jupyter",
-    "pycaret"
+    "pycaret",
+    "pytest",
+    "fastapi",
+    "uvicorn[standard]"
 ]
